@@ -161,7 +161,7 @@ kms_custom_mixer_recalculate_sizes (gpointer data)
 {
   KmsCustomMixer *self = KMS_CUSTOM_MIXER (data);
   GstCaps *filtercaps;
-  gint width, height, top, left, counter, n_columns, n_rows;
+  gint width, height, top, left, zorder, counter;
   GList *l;
   GList *values = g_hash_table_get_values (self->priv->ports);
 
@@ -172,19 +172,23 @@ kms_custom_mixer_recalculate_sizes (gpointer data)
   counter = 0;
   values = g_list_sort (values, compare_port_data);
 
-  n_columns = (gint) ceil (sqrt (self->priv->n_elems));
-  n_rows = (gint) ceil ((float) self->priv->n_elems / (float) n_columns);
-
-  GST_DEBUG_OBJECT (self, "columns %d rows %d", n_columns, n_rows);
-
-  width = self->priv->output_width / n_columns;
-  height = self->priv->output_height / n_rows;
-
   for (l = values; l != NULL; l = l->next) {
     KmsCustomMixerData *port_data = l->data;
-
     if (port_data->input == FALSE) {
       continue;
+    }
+    if (counter == 0) {		        // ストリーム1の位置 
+      width = 400;  height = 300;
+      left = 100;   top = 100;
+      zorder = 2;
+    } else if (counter == 1) {    // ストリーム2の位置
+      width = 200;  height = 150;
+      left = 400;   top = 350;
+      zorder = 3;
+    } else {											// その他のストリームは表示しない
+      width = 0;    height = 0;
+      left = 0;     top = 0;
+      zorder = 0;
     }
 
     filtercaps =
@@ -194,18 +198,14 @@ kms_custom_mixer_recalculate_sizes (gpointer data)
     g_object_set (port_data->capsfilter, "caps", filtercaps, NULL);
     gst_caps_unref (filtercaps);
 
-    top = ((counter / n_columns) * height);
-    left = ((counter % n_columns) * width);
-
+    // 合成後の位置の設定
     g_object_set (port_data->video_mixer_pad, "xpos", left, "ypos", top,
-        "alpha", 1.0, NULL);
+         "alpha", 1.0, "zorder", zorder, NULL);
     counter++;
-
     GST_DEBUG_OBJECT (self, "counter %d id_port %d ", counter, port_data->id);
     GST_DEBUG_OBJECT (self, "top %d left %d width %d height %d", top, left,
         width, height);
   }
-
   g_list_free (values);
 }
 
@@ -674,6 +674,9 @@ kms_custom_mixer_handle_port (KmsBaseHub * mixer,
       GstCaps *filtercaps;
       GstPad *pad;
       GstPadTemplate *sink_pad_template;
+      GstElement *filesrc;
+      GstElement *pngdec;
+      GstElement *imagefreeze;
 
       sink_pad_template =
           gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS
@@ -718,6 +721,37 @@ kms_custom_mixer_handle_port (KmsBaseHub * mixer,
 
       gst_element_sync_state_with_parent (capsfilter);
       gst_element_sync_state_with_parent (self->priv->videotestsrc);
+
+      sink_pad_template =
+          gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS
+          (self->priv->videomixer), "sink_%u");
+
+      if (G_UNLIKELY (sink_pad_template == NULL)) {
+        GST_ERROR_OBJECT (self, "Error taking a new pad from videomixer");
+      }
+      filesrc =
+          gst_element_factory_make("filesrc", NULL);
+      g_object_set(filesrc, "location", "/usr/share/kurento/modules/wallpaper.png", NULL);
+      g_object_set(filesrc, "is-live", TRUE, NULL);
+      pngdec = gst_element_factory_make ("pngdec", NULL);
+      imagefreeze = gst_element_factory_make ("imagefreeze", NULL);
+
+      gst_bin_add_many (GST_BIN (self), filesrc, pngdec, imagefreeze, NULL);
+
+      gst_element_link (filesrc, pngdec);
+      gst_element_link (pngdec, imagefreeze);
+
+      pad = gst_element_request_pad (self->priv->videomixer, sink_pad_template,
+          NULL, NULL);
+      gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_QUERY_UPSTREAM,
+          (GstPadProbeCallback) cb_latency, NULL, NULL);
+      gst_element_link_pads (imagefreeze, NULL, self->priv->videomixer, GST_OBJECT_NAME (pad));
+      g_object_set (pad, "xpos", 0, "ypos", 0, "alpha", 1.0, "zorder", 1, NULL);
+      g_object_unref (pad);
+
+      gst_element_sync_state_with_parent (filesrc);
+      gst_element_sync_state_with_parent (pngdec);
+      gst_element_sync_state_with_parent (imagefreeze);
     }
     gst_element_sync_state_with_parent (self->priv->videomixer);
     gst_element_sync_state_with_parent (self->priv->mixer_video_agnostic);
