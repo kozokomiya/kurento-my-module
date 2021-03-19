@@ -1,2 +1,13 @@
 build/
 debian/my_module
+
+debian/.debhelper/
+debian/files
+debian/my-module-dev.debhelper.log
+debian/my-module-dev.substvars
+debian/my-module-dev/
+debian/my-module.debhelper.log
+debian/my-module.substvars
+debian/my-module/
+debian/tmp/
+obj-x86_64-linux-gnu/
