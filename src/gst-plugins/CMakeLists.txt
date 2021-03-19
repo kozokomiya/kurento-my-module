@@ -3,12 +3,13 @@ include_directories(
   ${GSTREAMER_VIDEO_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${OPENCV_INCLUDE_DIRS}
+  ${KmsGstCommons_INCLUDE_DIRS}      # 行追加
 )
 
 set(MY_MODULE_SOURCES
   mymodule.c
-  gstmymodule.h
-  gstmymodule.cpp
+  gstcustommixer.h                   # gstcustommixer.hを指定
+  gstcustommixer.c                   # gstcustommixer.cを指定
 )
 
 add_library(mymodule MODULE ${MY_MODULE_SOURCES})
@@ -20,6 +21,7 @@ target_link_libraries(mymodule
   ${GSTREAMER_LIBRARIES}
   ${GSTREAMER_VIDEO_LIBRARIES}
   ${OPENCV_LIBRARIES}
+  ${KmsGstCommons_LIBRARIES}         # 行追加
 )
 
 install(

@@ -1,9 +1,9 @@
 {
   "remoteClasses": [
     {
-      "name": "MyModule",
-      "extends": "Filter",
-      "doc": "MyModule interface. Documentation about the module",
+      "name": "CustomMixer",
+      "extends": "Hub",
+      "doc": "CustomMixer interface. Documentation about the module",
       "constructor": {
         "doc": "Create an element",
         "params": [

@@ -1,13 +1,14 @@
 #include <config.h>
 #include <gst/gst.h>
 
-#include "gstmymodule.h"
+#include "gstcustommixer.h"
 
 static gboolean
 init (GstPlugin *plugin)
 {
-  if (!gst_my_module_plugin_init (plugin))
-    return FALSE;
+    // gst_my_module_plugin_initからkms_custom_mixer_plugin_initに変更
+    if (!kms_custom_mixer_plugin_init (plugin))  
+      return FALSE;
 
   return TRUE;
 }

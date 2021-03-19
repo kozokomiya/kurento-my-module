@@ -48,6 +48,9 @@ pkg_check_modules(GSTREAMER_CHECK REQUIRED gstreamer-check-1.5>=${GST_REQUIRED})
 pkg_check_modules(KMSCORE REQUIRED kmscore)
 pkg_check_modules(OPENCV REQUIRED opencv>=${OPENCV_REQUIRED})
 
+include(GenericFind)
+generic_find(LIBNAME KmsGstCommons REQUIRED)
+
 # Generate file "config.h"
 set(VERSION ${PROJECT_VERSION})
 set(PACKAGE ${PROJECT_NAME})
