@@ -1,0 +1,5 @@
+my-module (0.0.1~rc1) testing; urgency=medium
+
+  * Initial release.
+
+ -- Maintainer Name <maintainer.name@example.com>  Fri, 19 Mar 2021 00:39:35 +0000
